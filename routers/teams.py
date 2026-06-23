@@ -4,9 +4,8 @@ from database import get_db
 from models import Team
 from schemas import TeamCreate
 from oauth2 import get_current_admin
-
 router = APIRouter(prefix="/teams", tags=["Teams"])
-
+#Creating respective teams
 @router.post("/")
 def create_team(team: TeamCreate, db: Session = Depends(get_db), admin=Depends(get_current_admin)):
     new_team = Team(
@@ -19,7 +18,7 @@ def create_team(team: TeamCreate, db: Session = Depends(get_db), admin=Depends(g
     db.commit()
     db.refresh(new_team)
     return new_team
-
+#Getting the teams inputed
 @router.get("/")
 def get_teams(db: Session = Depends(get_db)):
     return db.query(Team).all()
