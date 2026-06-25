@@ -34,7 +34,17 @@ STEPS
 
 7.Run Database Migration using alembic
 
+    Code:alembic upgrade head
+
 8.Run Project
+
+    code:uvicorn main:app --reload
+
+9.Open swagger docs and give input to all apis to get final output
+
+Admin already given:
+Email : admin@gmail.com
+Password : admin123
 
 Methods Used in the live Project
 Python for coding
