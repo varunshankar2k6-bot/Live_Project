@@ -6,13 +6,18 @@ from models import Admin
 from utils import verify_password
 from jwt_utils import create_access_token
 import logging
+
 router = APIRouter(prefix="/admin", tags=["Admin"])
 logger = logging.getLogger(__name__)
-#Get databse
-db: Session = Depends(get_db)
-#Logging in for admin using authorization
+# Get databse
+from database import get_db
+
+
+# Logging in for admin using authorization
 @router.post("/login")
-def admin_login(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
+def admin_login(
+    form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)
+):
     try:
         admin = db.query(Admin).filter(Admin.email == form_data.username).first()
         if not admin:
@@ -23,12 +28,9 @@ def admin_login(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = 
         return {
             "status": "success",
             "access_token": token,
-            "user_details": {
-                "admin_id": admin.admin_id,
-                "email": admin.email
-            }
+            "user_details": {"admin_id": admin.admin_id, "email": admin.email},
         }
-    #Error handling
+    # Error handling
     except HTTPException:
         raise
     except Exception:

@@ -1,11 +1,16 @@
 import smtplib
 from email.mime.text import MIMEText
 import logging
+
 logger = logging.getLogger(__name__)
+
+
 def send_verification_email(email, otp):
     try:
-        sender_email = "varunshankar@xminds.com"
-        sender_password = "qbtu dgsw etmv oslz"
+        from config import MAIL_USERNAME, MAIL_PASSWORD, MAIL_SERVER, MAIL_PORT
+
+        sender_email = MAIL_USERNAME
+        sender_password = MAIL_PASSWORD
         subject = "Sports Prediction App Verification"
         body = f"Your OTP is {otp}"
         msg = MIMEText(body)

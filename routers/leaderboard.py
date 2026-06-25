@@ -1,12 +1,14 @@
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
-from database import SessionLocal
 from models import User
 import logging
+
 router = APIRouter(prefix="/leaderboard", tags=["Leaderboard"])
 logger = logging.getLogger(__name__)
-db: Session = Depends(get_db)
-#Getting leaderboard
+from database import get_db
+
+
+# Getting leaderboard
 @router.get("/")
 def get_leaderboard(db: Session = Depends(get_db)):
     try:
@@ -14,17 +16,9 @@ def get_leaderboard(db: Session = Depends(get_db)):
         data = []
         rank = 1
         for u in users:
-            data.append({
-                "rank": rank,
-                "username": u.username,
-                "points": u.points
-            })
+            data.append({"rank": rank, "username": u.username, "points": u.points})
             rank += 1
-        return {
-            "status": "success",
-            "response": "Leaderboard fetched",
-            "data": data
-        }
+        return {"status": "success", "response": "Leaderboard fetched", "data": data}
     except Exception:
         logger.error("Leaderboard error", exc_info=True)
         raise HTTPException(status_code=500, detail="Leaderboard error")

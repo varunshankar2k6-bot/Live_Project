@@ -1,18 +1,24 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
-from database import SessionLocal
 from models import Question, User, UserAnswer, History, Leaderboard
 from schemas import QuestionCreate, AnswerQuestion
 from oauth2 import get_current_admin
 from datetime import datetime
 import logging
+
 router = APIRouter(prefix="/questions", tags=["Questions"])
 logger = logging.getLogger(__name__)
 
-db: Session = Depends(get_db)
-#Creating question by admin authorization
+from database import get_db
+
+
+# Creating question by admin authorization
 @router.post("/create")
-def create_question(question: QuestionCreate, db: Session = Depends(get_db), admin=Depends(get_current_admin)):
+def create_question(
+    question: QuestionCreate,
+    db: Session = Depends(get_db),
+    admin=Depends(get_current_admin),
+):
     try:
         new_q = Question(
             match_id=question.match_id,
@@ -25,7 +31,7 @@ def create_question(question: QuestionCreate, db: Session = Depends(get_db), adm
             correct_answer=question.correct_answer,
             start_time=question.start_time,
             end_time=question.end_time,
-            status="ACTIVE"
+            status="ACTIVE",
         )
         db.add(new_q)
         db.commit()
@@ -33,36 +39,45 @@ def create_question(question: QuestionCreate, db: Session = Depends(get_db), adm
         return {
             "status": "success",
             "response": "Question created",
-            "data": {"question_id": new_q.question_id}
+            "data": {"question_id": new_q.question_id},
         }
-#Exception Handling
+    # Exception Handling
     except Exception:
         logger.error("Question create failed", exc_info=True)
         raise HTTPException(status_code=500, detail="Question error")
-#Exception if repeat
+
+
+# Exception if repeat
 @router.post("/answer/{user_id}/{question_id}")
-def answer_question(user_id: str, question_id: str, ans: AnswerQuestion, db: Session = Depends(get_db)):
+def answer_question(
+    user_id: str, question_id: str, ans: AnswerQuestion, db: Session = Depends(get_db)
+):
     try:
         user = db.query(User).filter(User.user_id == user_id).first()
         if not user:
             raise HTTPException(status_code=404, detail="User not found")
-        question = db.query(Question).filter(Question.question_id == question_id).first()
+        question = (
+            db.query(Question).filter(Question.question_id == question_id).first()
+        )
         if not question:
             raise HTTPException(status_code=404, detail="Question not found")
-        already = db.query(UserAnswer).filter(
-            UserAnswer.user_id == user_id,
-            UserAnswer.question_id == question_id
-        ).first()
+        already = (
+            db.query(UserAnswer)
+            .filter(
+                UserAnswer.user_id == user_id, UserAnswer.question_id == question_id
+            )
+            .first()
+        )
         if already:
             raise HTTPException(status_code=400, detail="Already answered")
         now = datetime.utcnow()
-        #Question end time
+        # Question end time
         if now < question.start_time or now > question.end_time:
             raise HTTPException(status_code=400, detail="Question not active")
         correct = ans.selected_option == question.correct_answer
         result = "Won" if correct else "Lost"
         points = 10 if correct else 0
-    #Points update
+        # Points update
         if correct:
             user.points += 10
         ua = UserAnswer(
@@ -70,17 +85,17 @@ def answer_question(user_id: str, question_id: str, ans: AnswerQuestion, db: Ses
             question_id=question_id,
             selected_option=ans.selected_option,
             answered_at=now,
-            result=result
+            result=result,
         )
         db.add(ua)
-        #History updation
+        # History updation
         history = History(
             user_id=user_id,
             question_id=question_id,
             selected_option=ans.selected_option,
             correct_answer=question.correct_answer,
             result=result,
-            points_change=points
+            points_change=points,
         )
         db.add(history)
         lb = db.query(Leaderboard).filter(Leaderboard.user_id == user_id).first()
@@ -96,8 +111,8 @@ def answer_question(user_id: str, question_id: str, ans: AnswerQuestion, db: Ses
             "data": {
                 "result": result,
                 "points_added": points,
-                "total_points": user.points
-            }
+                "total_points": user.points,
+            },
         }
     except HTTPException:
         raise
